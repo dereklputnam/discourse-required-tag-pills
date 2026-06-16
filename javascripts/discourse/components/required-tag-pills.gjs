@@ -4,6 +4,7 @@ import { action } from "@ember/object";
 import { set } from "@ember/object";
 import { service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
+import { eq } from "discourse/truth-helpers";
 
 // One fetch per session, shared across all component instances
 let tagGroupsDataCache = null;
