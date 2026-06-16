@@ -1,4 +1,5 @@
-target_category_ids:
-  type: string
+target_categories:
+  type: list
+  list_type: category
   default: ""
-  description: "Comma-separated category IDs where pills appear (leave blank for all categories that have required tag groups)"
+  description: "Categories where required tag pills are shown (leave blank for all categories with required tag groups)"

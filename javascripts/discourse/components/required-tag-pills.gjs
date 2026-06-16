@@ -1,5 +1,7 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
+import { fn } from "@ember/helper";
+import { on } from "@ember/modifier";
 import { action } from "@ember/object";
 import { set } from "@ember/object";
 import { service } from "@ember/service";
@@ -21,9 +23,9 @@ export default class RequiredTagPills extends Component {
   }
 
   get _targetCategoryIds() {
-    const raw = settings.target_category_ids?.trim();
+    const raw = settings.target_categories?.trim();
     if (!raw) return null; // null = apply to all categories
-    return raw.split(",").map((id) => parseInt(id.trim(), 10)).filter(Boolean);
+    return raw.split("|").map((id) => parseInt(id, 10)).filter(Boolean);
   }
 
   get _isApplicableCategory() {
