@@ -1,0 +1,44 @@
+.tags-input {
+  display: flex;
+  flex-direction: column;
+}
+
+.required-tag-pills {
+  order: -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tag-pill {
+  padding: 4px 10px;
+  font-size: var(--font-down-1);
+  border: 1px solid var(--primary-medium);
+  border-radius: var(--d-border-radius);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+
+  &:hover:not(.selected) {
+    background: var(--primary-low);
+  }
+
+  &.selected {
+    background: var(--primary);
+    color: var(--secondary);
+    border-color: var(--primary);
+  }
+}
+
+.required-tag-pills--loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .required-tag-pills {
+    flex-wrap: wrap;
+  }
+}

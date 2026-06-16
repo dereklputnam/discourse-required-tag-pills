@@ -1,0 +1,6 @@
+{
+  "name": "Discourse Required Tag Pills",
+  "about_url": "https://github.com/dereklputnam/discourse-required-tag-pills",
+  "license_url": "https://github.com/dereklputnam/discourse-required-tag-pills/blob/main/LICENSE",
+  "component": true
+}

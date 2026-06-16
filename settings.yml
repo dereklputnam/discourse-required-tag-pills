@@ -1,0 +1,9 @@
+required_tag_group_name:
+  type: string
+  default: ""
+  description: "The exact name of the tag group whose tags are displayed as pills"
+
+target_category_ids:
+  type: string
+  default: ""
+  description: "Comma-separated category IDs where pills appear (leave blank for all categories)"
