@@ -2,37 +2,58 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { set } from "@ember/object";
+import { service } from "@ember/service";
 import { ajax } from "discourse/lib/ajax";
 
-// Module-level cache persists across component instances in a session
-const tagGroupCache = new Map();
+// One fetch per session, shared across all component instances
+let tagGroupsDataCache = null;
+let tagGroupsLoadPromise = null;
 
 export default class RequiredTagPills extends Component {
-  @tracked tagGroupTags = [];
+  @service site;
+
+  @tracked _tagGroupsData = null;
 
   constructor(owner, args) {
     super(owner, args);
-    this.#loadTagGroup();
+    this._ensureTagGroupsLoaded();
   }
 
-  get #groupName() {
-    return settings.required_tag_group_name?.trim() || "";
-  }
-
-  get #targetCategoryIds() {
+  get _targetCategoryIds() {
     const raw = settings.target_category_ids?.trim();
-    if (!raw) return null; // null means all categories
+    if (!raw) return null; // null = apply to all categories
     return raw.split(",").map((id) => parseInt(id.trim(), 10)).filter(Boolean);
   }
 
-  get #isApplicableCategory() {
-    const ids = this.#targetCategoryIds;
+  get _isApplicableCategory() {
+    const ids = this._targetCategoryIds;
     if (!ids) return true;
     return ids.includes(this.args.composer?.categoryId);
   }
 
+  get _currentCategory() {
+    const categoryId = this.args.composer?.categoryId;
+    if (!categoryId) return null;
+    return this.site.categories.find((c) => c.id === categoryId) || null;
+  }
+
+  get _requiredGroupNames() {
+    return (this._currentCategory?.required_tag_groups || []).map(
+      (g) => g.name
+    );
+  }
+
+  get tagGroupTags() {
+    if (!this._tagGroupsData) return [];
+    const names = this._requiredGroupNames;
+    if (!names.length) return [];
+    return this._tagGroupsData.tag_groups
+      .filter((g) => names.includes(g.name))
+      .flatMap((g) => g.tag_names || []);
+  }
+
   get shouldShow() {
-    return this.#isApplicableCategory && this.tagGroupTags.length > 0;
+    return this._isApplicableCategory && this.tagGroupTags.length > 0;
   }
 
   get selectedTag() {
@@ -40,23 +61,25 @@ export default class RequiredTagPills extends Component {
     return this.tagGroupTags.find((t) => tags.includes(t)) || null;
   }
 
-  async #loadTagGroup() {
-    const groupName = this.#groupName;
-    if (!groupName) return;
-
-    if (tagGroupCache.has(groupName)) {
-      this.tagGroupTags = tagGroupCache.get(groupName);
+  async _ensureTagGroupsLoaded() {
+    if (tagGroupsDataCache) {
+      this._tagGroupsData = tagGroupsDataCache;
       return;
     }
-
-    try {
-      const response = await ajax("/tag_groups.json");
-      const group = response.tag_groups?.find((g) => g.name === groupName);
-      const tags = group?.tag_names || [];
-      tagGroupCache.set(groupName, tags);
-      this.tagGroupTags = tags;
-    } catch {
-      // fail silently if tag group not found
+    if (!tagGroupsLoadPromise) {
+      tagGroupsLoadPromise = ajax("/tag_groups.json")
+        .then((data) => {
+          tagGroupsDataCache = data;
+          return data;
+        })
+        .catch(() => {
+          tagGroupsLoadPromise = null; // allow retry on next mount
+          return null;
+        });
+    }
+    const data = await tagGroupsLoadPromise;
+    if (data) {
+      this._tagGroupsData = data;
     }
   }
 
@@ -68,7 +91,7 @@ export default class RequiredTagPills extends Component {
     const currentTags = [...(composer.tags || [])];
     const isSelected = currentTags.includes(tagName);
 
-    // Remove any previously selected pill tag
+    // Remove any previously selected tag from this required group
     const filtered = currentTags.filter((t) => !this.tagGroupTags.includes(t));
 
     if (!isSelected) {
